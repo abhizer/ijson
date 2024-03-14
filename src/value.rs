@@ -65,7 +65,7 @@ pub struct IValue {
 
 impl Ord for IValue {
     fn cmp(&self, other: &Self) -> Ordering {
-        Ordering::Greater
+        self.partial_cmp(other).unwrap_or(Ordering::Equal)
     }
 }
 
