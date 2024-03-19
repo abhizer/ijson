@@ -105,7 +105,7 @@ impl Destructured {
 
 /// Enum returned by [`IValue::destructure_ref`] to allow matching on the type of
 /// a reference to an [`IValue`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq, rkyv::Deserialize, rkyv::Serialize, rkyv::Archive)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum DestructuredRef<'a> {
     /// Null.
     Null,
