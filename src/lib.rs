@@ -38,6 +38,8 @@ pub use value::{
 };
 
 mod de;
+#[cfg(feature = "rkyv")]
+mod rkyv;
 mod ser;
 pub use de::from_value;
 pub use ser::to_value;

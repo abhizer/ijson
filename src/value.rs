@@ -58,8 +58,15 @@ use super::string::IString;
 ///   This method returns the [`ValueType`] enum, which has a variant for each of the
 ///   six JSON types.
 #[repr(transparent)]
+#[derive(size_of::SizeOf)]
 pub struct IValue {
     ptr: NonNull<u8>,
+}
+
+impl Ord for IValue {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(other).unwrap_or(Ordering::Equal)
+    }
 }
 
 /// Enum returned by [`IValue::destructure`] to allow matching on the type of
