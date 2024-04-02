@@ -23,6 +23,7 @@ ctor = { version = "0.2.4", optional = true }
 indexmap = { version = "2.0.0", optional = true }
 rkyv = { version = "0.7", default-features = false, features = ["std", "size_64", "validation"], optional = true }
 size-of = { git = "https://github.com/gz/size-of.git", rev = "3ec40db" }
+ordered-float = { version = "3.9.1", default-feaures = false, features = ["rkyv_64"] }
 
 [dev-dependencies]
 mockalloc = "0.1.2"

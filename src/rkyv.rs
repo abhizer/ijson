@@ -1,5 +1,6 @@
-use std::{collections::HashMap, convert::TryFrom, iter::FromIterator};
+use std::{collections::BTreeMap, convert::TryFrom, iter::FromIterator};
 
+use ordered_float::OrderedFloat;
 use rkyv::{
     ser::{ScratchSpace, Serializer},
     Serialize,
@@ -10,12 +11,15 @@ use crate::{IArray, INumber, IObject, IString};
 
 use super::value::IValue;
 
-#[derive(Debug, rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)]
+#[derive(
+    Debug, rkyv::Serialize, rkyv::Deserialize, rkyv::Archive, PartialOrd, PartialEq, Eq, Ord,
+)]
 #[archive(bound(serialize = "__S: rkyv::ser::ScratchSpace + rkyv::ser::Serializer"))]
 #[archive(check_bytes)]
 #[archive_attr(check_bytes(
     bound = "__C: rkyv::validation::ArchiveContext, <__C as rkyv::Fallible>::Error: rkyv::bytecheck::Error"
 ))]
+#[archive_attr(derive(PartialEq, Eq, PartialOrd, Ord))]
 pub enum ArchivableJson {
     Null,
     Bool(bool),
@@ -29,16 +33,17 @@ pub enum ArchivableJson {
     Object(
         #[omit_bounds]
         #[archive_attr(omit_bounds)]
-        HashMap<String, ArchivableJson>,
+        BTreeMap<String, ArchivableJson>,
     ),
 }
 
-#[derive(Archive, Debug, Deserialize, Serialize)]
+#[derive(Archive, Debug, Deserialize, Serialize, PartialEq, PartialOrd, Eq, Ord)]
 #[archive(check_bytes)]
+#[archive_attr(derive(PartialEq, Eq, PartialOrd, Ord))]
 pub enum JsonNumber {
     PosInt(u64),
     NegInt(i64),
-    Float(f64),
+    Float(OrderedFloat<f64>),
 }
 
 impl From<&IValue> for ArchivableJson {
@@ -48,7 +53,7 @@ impl From<&IValue> for ArchivableJson {
             crate::DestructuredRef::Bool(b) => ArchivableJson::Bool(b),
             crate::DestructuredRef::Number(n) => ArchivableJson::Number({
                 if n.has_decimal_point() {
-                    JsonNumber::Float(n.to_f64().unwrap())
+                    JsonNumber::Float(n.to_f64().unwrap().into())
                 } else if let Some(v) = n.to_i64() {
                     JsonNumber::NegInt(v)
                 } else {
@@ -88,7 +93,9 @@ impl From<ArchivableJson> for IValue {
             ArchivableJson::Number(n) => match n {
                 JsonNumber::PosInt(u) => INumber::from(u).into(),
                 JsonNumber::NegInt(neg) => INumber::from(neg).into(),
-                JsonNumber::Float(f) => INumber::try_from(f).expect("unexpected float").into(),
+                JsonNumber::Float(f) => INumber::try_from(f.into_inner())
+                    .expect("unexpected float")
+                    .into(),
             },
             ArchivableJson::String(s) => IString::from(s).into(),
             ArchivableJson::Array(arr) => {
