@@ -130,11 +130,34 @@ impl<D: Fallible + ?Sized> Deserialize<IValue, D> for Archived<IValue> {
     }
 }
 
+impl<S: Serializer + ScratchSpace> Serialize<S> for IString {
+    fn serialize(&self, serializer: &mut S) -> Result<Self::Resolver, S::Error> {
+        self.to_string().serialize(serializer)
+    }
+}
+
+impl Archive for IString {
+    type Archived = <String as Archive>::Archived;
+    type Resolver = <String as Archive>::Resolver;
+
+    unsafe fn resolve(&self, pos: usize, resolver: Self::Resolver, out: *mut Self::Archived) {
+        self.to_string().resolve(pos, resolver, out)
+    }
+}
+
+impl<D: Fallible + ?Sized> Deserialize<IString, D> for Archived<IString> {
+    fn deserialize(&self, deserializer: &mut D) -> Result<IString, D::Error> {
+        let r: String = rkyv::Deserialize::deserialize(self, deserializer)?;
+
+        Ok(IString::from(r))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use rkyv::Deserialize;
 
-    use crate::IValue;
+    use crate::{IString, IValue};
 
     use super::ArchivableJson;
 
@@ -218,5 +241,16 @@ mod tests {
         let decoded: IValue = archived.deserialize(&mut rkyv::Infallible).unwrap();
 
         assert_eq!(x, decoded);
+    }
+
+    #[test]
+    fn test_string_serialization() {
+        let s = "hello".to_string();
+
+        let encoded = rkyv::to_bytes::<_, 256>(&s).unwrap();
+        let archived = unsafe { rkyv::archived_root::<String>(&encoded[..]) };
+        let decoded: IString = archived.deserialize(&mut rkyv::Infallible).unwrap();
+
+        assert_eq!(s, decoded);
     }
 }
