@@ -3,7 +3,7 @@
 use std::alloc::{alloc, dealloc, Layout, LayoutError};
 use std::borrow::Borrow;
 use std::cmp::Ordering;
-use std::fmt::{self, Debug, Formatter};
+use std::fmt::{self, Debug, Display, Formatter};
 use std::hash::Hash;
 use std::ops::Deref;
 use std::ptr::{copy_nonoverlapping, NonNull};
@@ -137,6 +137,12 @@ impl WeakIString {
 #[repr(transparent)]
 #[derive(Clone, size_of::SizeOf)]
 pub struct IString(pub(crate) IValue);
+
+impl Display for IString {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
 
 value_subtype_impls!(IString, into_string, as_string, as_string_mut);
 
